@@ -1,0 +1,10 @@
+TASK 1: PRODUCT REVIEW SENTIMENT ANALYSIS
+=============================================
+Reviews analysed: 20
+
+Positive: 10 (50.0%)
+Neutral: 5 (25.0%)
+Negative: 5 (25.0%)
+
+Method: VADER lexicon-based sentiment analysis.
+Note: Automated sentiment labels are estimates and may require manual review.

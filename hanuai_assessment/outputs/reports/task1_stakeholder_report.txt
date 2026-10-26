@@ -1,0 +1,20 @@
+HANUAI - TASK 1 REVIEW ANALYSIS
+
+Input review rows: 10
+
+Sentiment distribution:
+Sentiment
+Positive    6
+Negative    3
+Neutral     1
+
+Theme distribution:
+Review Themes
+Ease of use             4
+Performance             4
+Other / unclassified    2
+Price / value           2
+Customer service        2
+Battery / power         1
+
+Caveat: VADER sentiment and keyword themes are estimates. Validate against manually labelled reviews before making business decisions.

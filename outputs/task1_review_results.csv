@@ -1,0 +1,247 @@
+from pathlib import Path
+import re
+import sys
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+
+ROOT = Path(__file__).resolve().parents[1]
+INPUT_FILE = ROOT / "data" / "input" / "reviews.csv"
+PROCESSED_DIR = ROOT / "data" / "processed"
+CHART_DIR = ROOT / "outputs" / "charts"
+REPORT_DIR = ROOT / "outputs" / "reports"
+
+REQUIRED_COLUMNS = ["review_text"]
+
+
+def prepare_folders():
+    """Create output folders if they do not exist."""
+    for folder in [PROCESSED_DIR, CHART_DIR, REPORT_DIR]:
+        folder.mkdir(parents=True, exist_ok=True)
+
+
+def find_column(df, candidates):
+    """Find a column using case-insensitive matching."""
+    lookup = {str(column).strip().lower(): column for column in df.columns}
+
+    for candidate in candidates:
+        if candidate.lower() in lookup:
+            return lookup[candidate.lower()]
+
+    return None
+
+
+def analyze_sentiment(text, analyzer):
+    """Calculate VADER sentiment scores and label."""
+    text = "" if pd.isna(text) else str(text)
+    scores = analyzer.polarity_scores(text)
+    compound = scores["compound"]
+
+    if compound >= 0.05:
+        label = "Positive"
+    elif compound <= -0.05:
+        label = "Negative"
+    else:
+        label = "Neutral"
+
+    return pd.Series({
+        "sentiment": label,
+        "sentiment_score": compound,
+        "positive_score": scores["pos"],
+        "neutral_score": scores["neu"],
+        "negative_score": scores["neg"],
+    })
+
+
+def extract_themes(text):
+    """Identify possible themes using transparent keyword rules."""
+    text = str(text).lower()
+
+    theme_keywords = {
+        "Quality / reliability": [
+            "broken", "stopped working", "defect", "quality",
+            "reliable", "damaged", "failure"
+        ],
+        "Battery / charging": [
+            "battery", "charging", "charge", "power"
+        ],
+        "Price / value": [
+            "price", "expensive", "value", "cost", "cheap"
+        ],
+        "Delivery / returns": [
+            "delivery", "shipping", "arrived", "return", "refund"
+        ],
+        "Customer support": [
+            "support", "service", "staff", "helpful"
+        ],
+        "Setup / usability": [
+            "setup", "install", "easy to use", "difficult", "instructions"
+        ],
+        "Performance": [
+            "performance", "slow", "fast", "works", "working"
+        ],
+    }
+
+    matched = [
+        theme for theme, keywords in theme_keywords.items()
+        if any(keyword in text for keyword in keywords)
+    ]
+
+    return "; ".join(matched) if matched else "Other / unclassified"
+
+
+def main():
+    prepare_folders()
+
+    if not INPUT_FILE.exists():
+        print(f"ERROR: Input file not found:\n{INPUT_FILE}")
+        print("Place your authorized review data in data/input/reviews.csv")
+        sys.exit(1)
+
+    try:
+        df = pd.read_csv(INPUT_FILE, encoding="utf-8-sig")
+    except Exception as exc:
+        print(f"ERROR: Could not read CSV: {exc}")
+        sys.exit(1)
+
+    df.columns = [str(column).strip() for column in df.columns]
+
+    text_col = find_column(
+        df, ["review_text", "review", "comment", "content", "text"]
+    )
+
+    if text_col is None:
+        print("ERROR: No review text column was found.")
+        print("Available columns:", list(df.columns))
+        sys.exit(1)
+
+    column_aliases = {
+        "review_id": ["review_id", "id"],
+        "title": ["title", "review_title", "headline"],
+        "date": ["date", "review_date", "published_date"],
+        "rating": ["rating", "score", "stars"],
+        "source": ["source", "website", "platform"],
+        "reviewer_name": ["reviewer_name", "reviewer", "author", "user"],
+    }
+
+    for target, candidates in column_aliases.items():
+        found = find_column(df, candidates)
+        if found is not None and found != target:
+            df.rename(columns={found: target}, inplace=True)
+
+    if text_col != "review_text":
+        df.rename(columns={text_col: "review_text"}, inplace=True)
+
+    df["review_text"] = df["review_text"].fillna("").astype(str).str.strip()
+    df = df[df["review_text"] != ""].copy()
+
+    if df.empty:
+        print("ERROR: No non-empty review text was found.")
+        sys.exit(1)
+
+    if "rating" in df.columns:
+        df["rating"] = pd.to_numeric(df["rating"], errors="coerce")
+
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+
+    analyzer = SentimentIntensityAnalyzer()
+    sentiment_results = df["review_text"].apply(
+        lambda text: analyze_sentiment(text, analyzer)
+    )
+
+    df = pd.concat([df.reset_index(drop=True),
+                    sentiment_results.reset_index(drop=True)], axis=1)
+
+    df["themes"] = df["review_text"].apply(extract_themes)
+
+    output_csv = PROCESSED_DIR / "task1_reviews_with_sentiment.csv"
+    df.to_csv(output_csv, index=False, encoding="utf-8-sig")
+
+    # Sentiment chart
+    counts = (
+        df["sentiment"]
+        .value_counts()
+        .reindex(["Positive", "Neutral", "Negative"], fill_value=0)
+    )
+
+    plt.figure(figsize=(8, 5))
+    counts.plot(kind="bar")
+    plt.title("Product Review Sentiment Distribution")
+    plt.xlabel("Sentiment")
+    plt.ylabel("Number of reviews")
+    plt.xticks(rotation=0)
+    plt.tight_layout()
+
+    chart_file = CHART_DIR / "sentiment_distribution.png"
+    plt.savefig(chart_file, dpi=150)
+    plt.close()
+
+    # Report
+    total = len(df)
+    sentiment_pct = (counts / total * 100).round(1)
+
+    lines = [
+        "TASK 1: PRODUCT REVIEW SENTIMENT ANALYSIS",
+        "=" * 45,
+        "",
+        f"Reviews analyzed: {total}",
+        "",
+        "Sentiment distribution:",
+    ]
+
+    for label in ["Positive", "Neutral", "Negative"]:
+        lines.append(
+            f"- {label}: {counts[label]} "
+            f"({sentiment_pct[label]}%)"
+        )
+
+    lines.extend([
+        "",
+        "Common keyword-based themes:",
+    ])
+
+    theme_counts = (
+        df["themes"]
+        .str.split("; ")
+        .explode()
+        .value_counts()
+        .head(10)
+    )
+
+    for theme, count in theme_counts.items():
+        lines.append(f"- {theme}: {count}")
+
+    lines.extend([
+        "",
+        "Interpretation notes:",
+        "- VADER provides automated sentiment estimates, not verified opinions.",
+        "- Theme labels are based on keyword rules and may miss context or sarcasm.",
+        "- Review sentiment alone does not prove why customers behaved a certain way.",
+        "- Validate a sample manually before using findings for business decisions.",
+        "",
+        "DATA LIMITATION:",
+        "- Confirm the dataset's source, collection permission, and completeness.",
+        "- The assessment requirement of at least 50 reviews must be verified.",
+    ])
+
+    report_file = REPORT_DIR / "task1_stakeholder_report.txt"
+    report_file.write_text("\n".join(lines), encoding="utf-8")
+
+    print("\nTask 1 completed successfully.")
+    print(f"Reviews analyzed: {total}")
+    print(f"Processed data: {output_csv}")
+    print(f"Chart: {chart_file}")
+    print(f"Report: {report_file}")
+
+    if total < 50:
+        print(
+            "WARNING: Fewer than 50 reviews were analyzed. "
+            "This does not meet a 50-review minimum."
+        )
+
+
+if __name__ == "__main__":
+    main()

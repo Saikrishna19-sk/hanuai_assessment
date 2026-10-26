@@ -1,0 +1,379 @@
+
+"""Task 2: Maintenance dataset EDA and text mining."""
+
+from pathlib import Path
+import sys
+import warnings
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
+
+warnings.filterwarnings("ignore", category=UserWarning)
+
+ROOT = Path(__file__).resolve().parents[1]
+INPUT_DIR = ROOT / "data" / "input"
+PROCESSED_DIR = ROOT / "data" / "processed"
+CHART_DIR = ROOT / "outputs" / "charts"
+REPORT_DIR = ROOT / "outputs" / "reports"
+
+EXCLUDED_FILES = {
+    "reviews.csv",
+    "task1_reviews_with_sentiment.csv",
+}
+
+
+def create_folders():
+    for folder in [PROCESSED_DIR, CHART_DIR, REPORT_DIR]:
+        folder.mkdir(parents=True, exist_ok=True)
+
+
+def load_dataset():
+    """Load the first eligible CSV or Excel file."""
+    candidates = sorted(
+        path for path in INPUT_DIR.iterdir()
+        if path.is_file()
+        and path.suffix.lower() in {".csv", ".xlsx", ".xls"}
+        and path.name.lower() not in EXCLUDED_FILES
+    )
+
+    if not candidates:
+        print("ERROR: No maintenance dataset found.")
+        print(f"Add a CSV or Excel dataset to: {INPUT_DIR}")
+        sys.exit(1)
+
+    path = candidates[0]
+    print(f"Loading dataset: {path.name}")
+
+    if path.suffix.lower() == ".csv":
+        df = pd.read_csv(path, encoding="utf-8-sig")
+    else:
+        df = pd.read_excel(path)
+
+    if df.empty:
+        print("ERROR: The selected dataset has no rows.")
+        sys.exit(1)
+
+    return df, path.name
+
+
+def clean_column_names(df):
+    df = df.copy()
+    df.columns = [
+        str(col).strip().lower().replace(" ", "_")
+        for col in df.columns
+    ]
+    return df
+
+
+def find_text_column(df):
+    """Choose the most suitable text column for mining."""
+    preferred = [
+        "description",
+        "incident_description",
+        "issue_description",
+        "problem_description",
+        "notes",
+        "comments",
+        "details",
+        "text",
+    ]
+
+    for column in preferred:
+        if column in df.columns:
+            return column
+
+    text_candidates = []
+
+    for column in df.columns:
+        if (
+            pd.api.types.is_object_dtype(df[column])
+            or pd.api.types.is_string_dtype(df[column])
+        ):
+            values = df[column].dropna().astype(str)
+
+            if len(values) == 0:
+                continue
+
+            average_length = values.str.len().mean()
+
+            if average_length >= 20:
+                text_candidates.append((column, average_length))
+
+    if not text_candidates:
+        return None
+
+    return sorted(text_candidates, key=lambda item: item[1], reverse=True)[0][0]
+
+
+def classify_issue(text):
+    """Keyword-based first-pass maintenance issue classification."""
+    text = str(text).lower()
+
+    rules = {
+        "Road / surface damage": [
+            "pothole", "crack", "pavement", "asphalt", "road surface"
+        ],
+        "Drainage / blockage": [
+            "drain", "blocked", "culvert", "waterlogging", "flooding"
+        ],
+        "Corrosion / rust": [
+            "corrosion", "corroded", "rust"
+        ],
+        "Electrical / power": [
+            "electrical", "wiring", "power supply", "circuit"
+        ],
+        "Overheating": [
+            "overheating", "overheated", "temperature"
+        ],
+        "Mechanical / vibration": [
+            "vibration", "bearing", "mechanical noise", "motor"
+        ],
+        "Failure / shutdown": [
+            "failure", "failed", "shutdown", "stopped operating"
+        ],
+    }
+
+    for category, keywords in rules.items():
+        if any(keyword in text for keyword in keywords):
+            return category
+
+    return "Other / manual review"
+
+
+def save_bar_chart(series, title, xlabel, ylabel, filename):
+    counts = series.fillna("Unknown").astype(str).value_counts().head(15)
+
+    if counts.empty:
+        return
+
+    plt.figure(figsize=(10, 6))
+    counts.sort_values().plot(kind="barh")
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.tight_layout()
+    plt.savefig(CHART_DIR / filename, dpi=150)
+    plt.close()
+
+
+def main():
+    create_folders()
+
+    if not INPUT_DIR.exists():
+        print(f"ERROR: Input folder does not exist: {INPUT_DIR}")
+        sys.exit(1)
+
+    try:
+        df, source_name = load_dataset()
+    except Exception as exc:
+        print(f"ERROR loading dataset: {exc}")
+        sys.exit(1)
+
+    df = clean_column_names(df)
+
+    # General data quality checks
+    original_rows = len(df)
+    duplicate_rows = int(df.duplicated().sum())
+    missing_by_column = df.isna().sum()
+
+    # Parse likely date columns
+    date_columns = [
+        col for col in df.columns
+        if "date" in col or col.endswith("_at")
+    ]
+
+    for column in date_columns:
+        df[column] = pd.to_datetime(df[column], errors="coerce")
+
+    # Numeric summaries
+    numeric_summary = df.describe(include="number").transpose()
+    numeric_summary.to_csv(
+        PROCESSED_DIR / "task2_numeric_summary.csv",
+        encoding="utf-8-sig",
+    )
+
+    # Missing values
+    missing_report = pd.DataFrame({
+        "column": missing_by_column.index,
+        "missing_count": missing_by_column.values,
+        "missing_percent": (
+            missing_by_column.values / max(original_rows, 1) * 100
+        ).round(2),
+    })
+    missing_report.to_csv(
+        PROCESSED_DIR / "task2_missing_values.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    # Issue classification and text clustering
+    text_column = find_text_column(df)
+
+    if text_column:
+        df[text_column] = df[text_column].fillna("").astype(str)
+        df["issue_category"] = df[text_column].apply(classify_issue)
+
+        usable_text = df[text_column].str.strip().ne("")
+        df["text_cluster"] = -1
+
+        if usable_text.sum() >= 2:
+            texts = df.loc[usable_text, text_column].tolist()
+
+            try:
+                vectorizer = TfidfVectorizer(
+                    stop_words="english",
+                    max_features=1000,
+                    ngram_range=(1, 2),
+                )
+                matrix = vectorizer.fit_transform(texts)
+
+                if matrix.shape[1] > 0:
+                    cluster_count = min(5, len(texts))
+                    model = KMeans(
+                        n_clusters=cluster_count,
+                        random_state=42,
+                        n_init=10,
+                    )
+                    labels = model.fit_predict(matrix)
+                    df.loc[usable_text, "text_cluster"] = labels
+
+                    # Show representative terms for each cluster
+                    terms = vectorizer.get_feature_names_out()
+                    cluster_lines = []
+
+                    for cluster_id, center in enumerate(
+                        model.cluster_centers_
+                    ):
+                        top_indices = center.argsort()[-8:][::-1]
+                        top_terms = [
+                            terms[index] for index in top_indices
+                        ]
+                        cluster_lines.append(
+                            f"Cluster {cluster_id}: "
+                            + ", ".join(top_terms)
+                        )
+
+                    (
+                        REPORT_DIR / "task2_cluster_terms.txt"
+                    ).write_text(
+                        "\n".join(cluster_lines),
+                        encoding="utf-8",
+                    )
+
+            except ValueError as exc:
+                print(f"Clustering skipped: {exc}")
+
+        save_bar_chart(
+            df["issue_category"],
+            "Maintenance Issues by Keyword Category",
+            "Number of records",
+            "Issue category",
+            "maintenance_issue_categories.png",
+        )
+
+        cluster_values = df.loc[
+            df["text_cluster"] >= 0, "text_cluster"
+        ]
+
+        if not cluster_values.empty:
+            save_bar_chart(
+                cluster_values,
+                "Text Clusters",
+                "Number of records",
+                "Cluster",
+                "maintenance_text_clusters.png",
+            )
+
+    else:
+        print(
+            "WARNING: No suitable text column found. "
+            "Text classification and clustering were skipped."
+        )
+
+    # Save processed dataset
+    processed_path = (
+        PROCESSED_DIR / "task2_maintenance_analysis.csv"
+    )
+    df.to_csv(processed_path, index=False, encoding="utf-8-sig")
+
+    # Missingness chart
+    nonzero_missing = missing_by_column[missing_by_column > 0]
+
+    if not nonzero_missing.empty:
+        plt.figure(figsize=(10, 5))
+        nonzero_missing.sort_values().plot(kind="barh")
+        plt.title("Missing Values by Column")
+        plt.xlabel("Missing value count")
+        plt.tight_layout()
+        plt.savefig(
+            CHART_DIR / "maintenance_missing_values.png",
+            dpi=150,
+        )
+        plt.close()
+
+    # Stakeholder report
+    report = [
+        "TASK 2: MAINTENANCE DATA EDA AND TEXT MINING",
+        "=" * 52,
+        "",
+        f"Input file: {source_name}",
+        f"Rows: {len(df)}",
+        f"Columns: {len(df.columns)}",
+        f"Duplicate rows: {duplicate_rows}",
+        "",
+        "Missing values by column:",
+    ]
+
+    for column, count in missing_by_column.items():
+        report.append(
+            f"- {column}: {int(count)} "
+            f"({count / max(original_rows, 1) * 100:.1f}%)"
+        )
+
+    if text_column:
+        report.extend([
+            "",
+            f"Text column analyzed: {text_column}",
+            "",
+            "Issue category counts:",
+        ])
+
+        for category, count in (
+            df["issue_category"].value_counts().items()
+        ):
+            report.append(f"- {category}: {count}")
+
+        report.extend([
+            "",
+            "Potential operational actions:",
+            "- Prioritize high-severity incidents using an agreed risk matrix.",
+            "- Review recurring issue categories for preventive maintenance.",
+            "- Validate automated categories against manually reviewed records.",
+            "- Investigate missing or inconsistent fields before decision-making.",
+            "- Use cluster terms to guide investigation; clusters are not root causes.",
+        ])
+
+    report.extend([
+        "",
+        "LIMITATIONS",
+        "- Keyword categories may miss synonyms, context, and multiple issues.",
+        "- TF-IDF/KMeans clusters are exploratory, not verified root causes.",
+        "- Conclusions depend on the supplied dataset's quality and coverage.",
+        "- Severity recommendations require confirmation of domain-specific policy.",
+    ])
+
+    (
+        REPORT_DIR / "task2_stakeholder_report.txt"
+    ).write_text("\n".join(report), encoding="utf-8")
+
+    print("\nTask 2 completed.")
+    print(f"Input file: {source_name}")
+    print(f"Processed data: {processed_path}")
+    print(f"Report: {REPORT_DIR / 'task2_stakeholder_report.txt'}")
+    print(f"Charts folder: {CHART_DIR}")
+
+
+if __name__ == "__main__":
+    main()

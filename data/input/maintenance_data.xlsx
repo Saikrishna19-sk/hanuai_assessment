@@ -1,0 +1,18 @@
+```csv
+record_id,asset,description,downtime_hours,maintenance_cost
+1,Pump A,Hydraulic pressure leak detected,4,350
+2,Motor B,Motor bearing vibration observed,3,240
+3,Panel C,Electrical wiring fault,5,420
+4,Pump A,Hydraulic pump pressure low,2,180
+5,Motor B,Motor overheating and vibration,6,500
+6,Panel C,Electrical circuit failure,7,600
+7,Conveyor A,Routine preventive inspection,1,80
+8,Pump B,Fluid leakage near hydraulic seal,4,310
+9,Motor C,Bearing noise and vibration,3,260
+10,Panel A,Power supply and voltage issue,5,450
+11,Conveyor B,Routine lubrication and inspection,1,90
+12,Pump C,Hydraulic pressure drop,3,220
+13,Motor A,Motor gear failure,8,700
+14,Panel B,Electrical wiring damage,4,330
+15,Conveyor C,Preventive maintenance inspection,2,100
+```

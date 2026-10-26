@@ -1,0 +1,7 @@
+column,dtype,missing_count,missing_percent,unique_values
+incident_id,str,0,0.0,12
+date,str,0,0.0,12
+asset_type,str,0,0.0,4
+location,str,0,0.0,4
+severity,str,0,0.0,3
+description,str,0,0.0,12

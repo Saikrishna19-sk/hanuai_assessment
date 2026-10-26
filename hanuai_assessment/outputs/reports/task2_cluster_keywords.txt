@@ -1,0 +1,5 @@
+Cluster 0: surface, potholes, road, road surface, potholes cracks, cracks road, cracks, observed, asphalt, surface cracking
+Cluster 1: caused, drainage, blocked, rainfall, blocked drainage, caused waterlogging, drainage caused, waterlogging rainfall, waterlogging, standing
+Cluster 2: steel support, support, support components, steel, corrosion detected, components, detected, detected steel, corrosion, wiring
+Cluster 3: equipment, operation, overheating, equipment overheating, overheating normal, normal, normal operation, stopped equipment, electrical, failure
+Cluster 4: inspection, rust, corrosion maintenance, maintenance, maintenance inspection, rust corrosion, reported inspection, reported, pavement, minor

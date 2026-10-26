@@ -1,0 +1,11 @@
+﻿review_id,title,review_text,date,rating,source,reviewer_name
+R001,Great product,Works perfectly and is very easy to use,2026-01-10,5,Sample Dataset,Reviewer A
+R002,Poor quality,Stopped working after two days and feels cheaply made,2026-01-12,1,Sample Dataset,Reviewer B
+R003,Good value,Good performance for the price and easy to install,2026-01-15,4,Sample Dataset,Reviewer C
+R004,Battery issue,Battery drains quickly and charging is very slow,2026-01-17,2,Sample Dataset,Reviewer D
+R005,Excellent design,Looks great and works well for everyday use,2026-01-20,5,Sample Dataset,Reviewer E
+R006,Disappointing,Product arrived damaged and customer support was unhelpful,2026-01-22,1,Sample Dataset,Reviewer F
+R007,Works as expected,Simple setup and satisfactory performance,2026-01-25,4,Sample Dataset,Reviewer G
+R008,Average product,The product is okay but feels expensive for its quality,2026-01-27,3,Sample Dataset,Reviewer H
+R009,Very reliable,Good build quality and has worked without problems,2026-02-01,5,Sample Dataset,Reviewer I
+R010,Not recommended,Stopped working and the return process was difficult,2026-02-03,1,Sample Dataset,Reviewer J

@@ -1,0 +1,8 @@
+﻿
+review_id,product,review_text,rating,sentiment
+1,Headphones,Great sound quality and comfortable,5,Positive
+2,Phone,Excellent battery life,5,Positive
+3,Laptop,Very fast and reliable,4,Positive
+4,Charger,Stopped working after two days,1,Negative
+5,Keyboard,Keys are difficult to press,2,Negative
+6,Mouse,Works as expected,3,Neutral

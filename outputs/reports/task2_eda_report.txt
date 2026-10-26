@@ -1,0 +1,35 @@
+TASK 2: MAINTENANCE DATA ANALYSIS
+=============================================
+Source file: maintenance_data.csv
+Records analysed: 15
+Columns: 7
+Duplicate rows after cleaning: 0
+
+Column names:
+- record_id
+- asset
+- description
+- downtime_hours
+- maintenance_cost
+- issue_category
+- text_cluster
+
+Missing values:
+          column  missing_count  missing_percent
+       record_id              0              0.0
+           asset              0              0.0
+     description              0              0.0
+  downtime_hours              0              0.0
+maintenance_cost              0              0.0
+
+Issue category counts:
+issue_category
+Hydraulic                 4
+Mechanical                4
+Electrical                4
+Preventive Maintenance    3
+
+Limitations:
+- Categories are assigned using simple keyword rules.
+- Clusters are exploratory groups, not confirmed root causes.
+- Review results with a maintenance expert before making decisions.

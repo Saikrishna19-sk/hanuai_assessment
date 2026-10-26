@@ -1,0 +1,13 @@
+﻿incident_id,date,asset_type,location,severity,description,combined_text,issue_tags,primary_issue_category
+M001,2026-01-01,Road,Zone A,High,Potholes and cracks found on the road surface,Potholes and cracks found on the road surface,road_surface_issue,road_surface_issue
+M002,2026-01-03,Bridge,Zone B,High,Corrosion detected on steel support components,Corrosion detected on steel support components,corrosion_issue,corrosion_issue
+M003,2026-01-05,Drain,Zone A,Medium,Blocked drainage caused waterlogging after rainfall,Blocked drainage caused waterlogging after rainfall,water_drainage_issue,water_drainage_issue
+M004,2026-01-07,Machine,Zone C,High,Electrical wiring failure stopped equipment operation,Electrical wiring failure stopped equipment operation,component_failure; electrical_issue,component_failure
+M005,2026-01-09,Road,Zone A,Medium,Asphalt deterioration and surface cracking observed,Asphalt deterioration and surface cracking observed,component_failure; road_surface_issue,component_failure
+M006,2026-01-12,Bridge,Zone B,High,Bearing vibration and abnormal mechanical noise,Bearing vibration and abnormal mechanical noise,mechanical_issue,mechanical_issue
+M007,2026-01-14,Drain,Zone A,High,Blocked culvert caused flooding near the roadway,Blocked culvert caused flooding near the roadway,water_drainage_issue,water_drainage_issue
+M008,2026-01-16,Machine,Zone C,Medium,Equipment overheating during normal operation,Equipment overheating during normal operation,mechanical_issue,mechanical_issue
+M009,2026-01-18,Road,Zone D,Low,Minor pavement damage reported during inspection,Minor pavement damage reported during inspection,road_surface_issue,road_surface_issue
+M010,2026-01-20,Bridge,Zone B,High,Rust and corrosion found during maintenance inspection,Rust and corrosion found during maintenance inspection,corrosion_issue,corrosion_issue
+M011,2026-01-22,Machine,Zone C,Medium,Power supply issue caused an unexpected shutdown,Power supply issue caused an unexpected shutdown,unclassified,unclassified
+M012,2026-01-24,Drain,Zone A,Medium,Drainage blockage caused standing water,Drainage blockage caused standing water,water_drainage_issue,water_drainage_issue

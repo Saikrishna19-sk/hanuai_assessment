@@ -1,0 +1,66 @@
+HANUAI ML ASSESSMENT - COMBINED SUMMARY
+Generated: 2026-10-26 11:01:15
+Project directory: C:\Users\rapak\OneDrive\Documents\hanuai_assessment
+
+============================================================
+TASK 1: PRODUCT REVIEW SENTIMENT ANALYSIS
+============================================================
+Total reviews analysed: 20
+
+Sentiment distribution:
+  Positive: 10 reviews (50.0%)
+  Negative: 5 reviews (25.0%)
+  Neutral: 5 reviews (25.0%)
+
+Key findings:
+- Positive reviews: 10 (50.0%)
+- Negative reviews: 5 (25.0%)
+- Neutral reviews: 5 (25.0%)
+
+Average rating: 3.25
+
+Recommendation: Review recurring negative feedback to identify product-quality and customer-experience improvements.
+
+============================================================
+TASK 2: MAINTENANCE DATA ANALYSIS
+============================================================
+Total maintenance records analysed: 15
+Number of columns: 7
+
+Columns in the dataset:
+- record_id
+- asset
+- description
+- downtime_hours
+- maintenance_cost
+- issue_category
+- text_cluster
+
+Most common issue categories:
+- Hydraulic: 4
+- Mechanical: 4
+- Electrical: 4
+- Preventive Maintenance: 3
+
+Numeric summary:
+      Unnamed: 0  count       mean        std  min   25%   50%   75%   max
+       record_id   15.0   8.000000   4.472136  1.0   4.5   8.0  11.5  15.0
+  downtime_hours   15.0   3.866667   2.065591  1.0   2.5   4.0   5.0   8.0
+maintenance_cost   15.0 322.000000 185.480072 80.0 200.0 310.0 435.0 700.0
+
+Missing-value summary:
+          column  missing_count  missing_percent
+       record_id              0              0.0
+           asset              0              0.0
+     description              0              0.0
+  downtime_hours              0              0.0
+maintenance_cost              0              0.0
+
+============================================================
+OVERALL NOTES
+============================================================
+- Verify that input data is genuine and authorised for use.
+- Treat sentiment labels and automated issue categories as estimates that may require manual validation.
+- Do not report findings from missing data as actual results.
+
+End of report.

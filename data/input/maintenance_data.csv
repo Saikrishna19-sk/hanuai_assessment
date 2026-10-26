@@ -1,0 +1,5 @@
+python src\validate_data.py
+python src\task1_reviews.py
+python src\task2_eda.py
+python src\text_mining.py
+python src\generate_summary.py

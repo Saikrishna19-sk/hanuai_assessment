@@ -1,0 +1,34 @@
+HANUAI - TASK 2 EDA AND TEXT MINING
+
+Original rows: 12
+Rows after exact duplicate removal: 12
+Exact duplicate rows removed: 0
+
+Column quality profile:
+     column dtype  missing_count  missing_percent  unique_values
+incident_id   str              0              0.0             12
+       date   str              0              0.0             12
+ asset_type   str              0              0.0              4
+   location   str              0              0.0              4
+   severity   str              0              0.0              3
+description   str              0              0.0             12
+
+Identified text columns:
+description
+
+Issue tag counts:
+                 tag  count
+  road_surface_issue      3
+water_drainage_issue      3
+     corrosion_issue      2
+   component_failure      2
+    mechanical_issue      2
+    electrical_issue      1
+        unclassified      1
+
+Recommendations:
+- Validate extracted tags with maintenance specialists.
+- Prioritise recurring high-severity issues, not frequency alone.
+- Compare issue rates over time after accounting for exposure.
+- Investigate possible root causes using work orders, asset age, environment, component identifiers and repair history.
+- Treat unsupervised clusters as exploratory groups, not confirmed root causes.
